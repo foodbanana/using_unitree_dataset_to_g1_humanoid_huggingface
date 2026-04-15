@@ -1,0 +1,39 @@
+<mujoco model="ur5e_with_robotiq">
+  <asset>
+    <!-- Load submodels for attach; prefixes avoid name collisions. -->
+    <model name="ur5e_model" file="universal_robots_ur5e/ur5e.xml"/>
+    <model name="robotiq_model" file="robotiq_2f85/2f85.xml"/>
+    <material name="floor_mat" rgba="0.2 0.25 0.3 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 3" dir="0 0 -1"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="floor_mat"/>
+
+    <body name="ur5e_root">
+      <attach model="ur5e_model" body="base" prefix="ur5e_"/>
+    </body>
+
+    <!-- Start as a free body and weld to the UR5e EE attachment site. -->
+    <body name="robotiq_root" pos="0.8 0 0.9">
+      <freejoint/>
+      <site name="rq_mount_site" pos="0 0 0" size="0.006" rgba="0 1 0 0.4"/>
+      <attach model="robotiq_model" body="base_mount" prefix="rq_"/>
+    </body>
+  </worldbody>
+
+  <equality>
+    <!-- ur5e_attachment_site comes from ur5e.xml with prefix "ur5e_". -->
+    <weld site1="ur5e_attachment_site"
+          site2="rq_mount_site"
+          solref="0.002 1"
+          solimp="0.99 0.999 0.0001"
+          torquescale="1"/>
+  </equality>
+
+  <contact>
+    <exclude body1="ur5e_wrist_3_link" body2="rq_base_mount"/>
+    <exclude body1="ur5e_wrist_3_link" body2="rq_base"/>
+    <exclude body1="ur5e_wrist_2_link" body2="rq_base_mount"/>
+  </contact>
+</mujoco>

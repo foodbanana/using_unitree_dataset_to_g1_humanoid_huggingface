@@ -1,0 +1,747 @@
+<?xml version="1.0" ?>
+<robot name="converted_robot">
+   <!--generated with mjcf_urdf_simple_converter (https://github.com/Yasu31/mjcf_urdf_simple_converter)-->
+   <link name="world">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.0"/>
+         <inertia ixx="0.0" iyy="0.0" izz="0.0" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="ur5e_root">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.0"/>
+         <inertia ixx="0.0" iyy="0.0" izz="0.0" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="fixed" name="world2ur5e_root_fixed">
+      <parent link="world"/>
+      <child link="ur5e_root"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_base">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="4.0"/>
+         <inertia ixx="0.00443333156" iyy="0.00443333156" izz="0.0072" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_base_0">
+         <origin xyz="6.729318621181485e-07 -3.6596373548373673e-07 0.09357351429819695" rpy="-1.5707963267948966 -1.5707857113515709 3.141592653589793"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_base_0_080808ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_base_1">
+         <origin xyz="1.503945707798981e-07 5.030274644771805e-07 0.03113409206125086" rpy="-1.399528539771004 -1.5707749404564806 -1.0870925788402255"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_base_1_474747ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_root2ur5e_base_fixed">
+      <parent link="ur5e_root"/>
+      <child link="ur5e_base"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+   </joint>
+   <link name="ur5e_shoulder_link">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="3.7"/>
+         <inertia ixx="0.0102675" iyy="0.0102675" izz="0.00666" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_shoulder_0">
+         <origin xyz="0.0001579198071144923 -0.008422927154951222 0.04825544244212041" rpy="2.9720573015818483 -1.2403403911528637 -1.566448043192206"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_shoulder_0_7dadccff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_shoulder_1">
+         <origin xyz="1.0217402531697843e-06 0.06888462521467517 -0.000503284068890808" rpy="0.16995490760307885 -1.5623390598795694e-05 1.5708061595614313"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_shoulder_1_080808ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_shoulder_2">
+         <origin xyz="-4.987106654918215e-05 0.0005636150374333556 -0.01875771782384345" rpy="1.6252859977178944 0.74319992894974 1.5734657987361387"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_shoulder_2_474747ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_shoulder_pan_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_shoulder_pan_joint">
+      <parent link="ur5e_base"/>
+      <child link="ur5e_shoulder_pan_joint_jointbody"/>
+      <origin xyz="0.0 0.0 0.163" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 0.0 1.0"/>
+      <limit lower="-6.28319" upper="6.28319" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_shoulder_pan_joint_offset">
+      <parent link="ur5e_shoulder_pan_joint_jointbody"/>
+      <child link="ur5e_shoulder_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_upper_arm_link">
+      <inertial>
+         <origin xyz="0.0 0.0 0.2125" rpy="0.0 0.0 0.0"/>
+         <mass value="8.393"/>
+         <inertia ixx="0.133886" iyy="0.133886" izz="0.0151074" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_upperarm_0">
+         <origin xyz="-3.5760986999942557e-06 -0.00019999979744521934 0.2121351784520985" rpy="-0.00033054302069512875 -1.4933708105679955e-06 -0.35514353174096286"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_upperarm_0_d1d1d1ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_upperarm_1">
+         <origin xyz="-7.532369564797005e-07 -0.02455902448126744 0.29812745654549255" rpy="0.17716174242397165 7.967832782251882e-05 -0.00048191154196722263"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_upperarm_1_080808ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_upperarm_2">
+         <origin xyz="1.2475330963946302e-05 -0.020613766332852907 0.21354779205990887" rpy="-4.279076197777343e-05 -0.00939633188786626 1.5726071086918691"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_upperarm_2_474747ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_upperarm_3">
+         <origin xyz="-1.6738822332805943e-05 0.04530972332900902 0.21224046110461658" rpy="-1.1169861401483239e-05 -0.00033473145213402944 1.5712747113366192"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_upperarm_3_7dadccff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_shoulder_lift_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_shoulder_lift_joint">
+      <parent link="ur5e_shoulder_link"/>
+      <child link="ur5e_shoulder_lift_joint_jointbody"/>
+      <origin xyz="0.0 0.138 0.0" rpy="-0.0 1.5707963267948966 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-6.28319" upper="6.28319" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_shoulder_lift_joint_offset">
+      <parent link="ur5e_shoulder_lift_joint_jointbody"/>
+      <child link="ur5e_upper_arm_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_forearm_link">
+      <inertial>
+         <origin xyz="0.0 0.0 0.196" rpy="0.0 0.0 0.0"/>
+         <mass value="2.275"/>
+         <inertia ixx="0.0311796" iyy="0.0311796" izz="0.004095" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_forearm_0">
+         <origin xyz="2.6207363383002557e-05 -0.03986927887408664 0.39588938552993114" rpy="0.14899667064407296 0.3108521731199525 1.5710806045312697"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_forearm_0_7dadccff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_forearm_1">
+         <origin xyz="-2.3636867243387616e-05 -0.0004340913719860277 0.204343083020783" rpy="0.0003357950292532941 -0.0005516154353499836 1.3332982833164047"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_forearm_1_d1d1d1ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_forearm_2">
+         <origin xyz="-9.66138589916062e-06 0.016976509028764613 0.25503902118262084" rpy="-0.1463016262272855 0.0006537089324485379 0.004919271858447524"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_forearm_2_080808ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_forearm_3">
+         <origin xyz="2.975142777834475e-06 0.01196066834502387 0.163616824759711" rpy="2.9786105121054618e-05 0.020325139034571116 1.5715676831718508"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_forearm_3_474747ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_elbow_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_elbow_joint">
+      <parent link="ur5e_upper_arm_link"/>
+      <child link="ur5e_elbow_joint_jointbody"/>
+      <origin xyz="0.0 -0.131 0.425" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-3.1415" upper="3.1415" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_elbow_joint_offset">
+      <parent link="ur5e_elbow_joint_jointbody"/>
+      <child link="ur5e_forearm_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_wrist_1_link">
+      <inertial>
+         <origin xyz="0.0 0.127 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="1.219"/>
+         <inertia ixx="0.0025599" iyy="0.0025599" izz="0.0021942" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_wrist1_0">
+         <origin xyz="-2.324752008885248e-05 0.12628514044400524 0.04897505972393637" rpy="-1.5707963267955911 -1.5705970679188206 -1.169748682409278"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist1_0_080808ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_wrist1_1">
+         <origin xyz="-3.6644583695254237e-05 0.13040179162514767 -0.039703488567445454" rpy="-3.0659680894269 -1.2613429633090303 -1.5694033802823593"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist1_1_7dadccff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_wrist1_2">
+         <origin xyz="-2.0990614937820244e-06 0.11289621711604998 0.012388333942626797" rpy="-3.1400977441796236 -1.0305077756151968 -1.572331006823194"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist1_2_474747ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_wrist_1_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_wrist_1_joint">
+      <parent link="ur5e_forearm_link"/>
+      <child link="ur5e_wrist_1_joint_jointbody"/>
+      <origin xyz="0.0 0.0 0.392" rpy="-0.0 1.5707963267948966 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-6.28319" upper="6.28319" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_wrist_1_joint_offset">
+      <parent link="ur5e_wrist_1_joint_jointbody"/>
+      <child link="ur5e_wrist_1_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_wrist_2_link">
+      <inertial>
+         <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 0.0"/>
+         <mass value="1.219"/>
+         <inertia ixx="0.0025599" iyy="0.0025599" izz="0.0021942" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_wrist2_0">
+         <origin xyz="-3.8001937811610543e-06 0.04853645611151084 0.09943580433195488" rpy="0.17748605449059573 0.0 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist2_0_080808ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_wrist2_1">
+         <origin xyz="3.169640163593594e-05 -0.040206055715980675 0.10359119935436584" rpy="0.11116566518449311 0.3094663745829749 1.5711748623937276"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist2_1_7dadccff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_wrist2_2">
+         <origin xyz="9.000191078913615e-07 0.016056655860314212 0.09663180277604577" rpy="-3.1411058592901813 -0.8028357577556228 -1.5708829412270986"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist2_2_474747ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_wrist_2_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_wrist_2_joint">
+      <parent link="ur5e_wrist_1_link"/>
+      <child link="ur5e_wrist_2_joint_jointbody"/>
+      <origin xyz="0.0 0.127 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 0.0 1.0"/>
+      <limit lower="-6.28319" upper="6.28319" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_wrist_2_joint_offset">
+      <parent link="ur5e_wrist_2_joint_jointbody"/>
+      <child link="ur5e_wrist_2_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_wrist_3_link">
+      <inertial>
+         <origin xyz="0.0 0.0771683 0.0" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.1889"/>
+         <inertia ixx="0.000132134" iyy="9.90863e-05" izz="9.90863e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_wrist3">
+         <origin xyz="1.3730314416336136e-05 0.07930911124904105 -0.0005378684357207328" rpy="0.22605647583783017 0.004863637106366836 1.5703149375099286"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_wrist3_d1d1d1ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_wrist_3_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_wrist_3_joint">
+      <parent link="ur5e_wrist_2_link"/>
+      <child link="ur5e_wrist_3_joint_jointbody"/>
+      <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-6.28319" upper="6.28319" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_wrist_3_joint_offset">
+      <parent link="ur5e_wrist_3_joint_jointbody"/>
+      <child link="ur5e_wrist_3_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_mount">
+      <inertial>
+         <origin xyz="0.0 0.1 0.0" rpy="-1.5707963267948957 0.0 0.0"/>
+         <mass value="0.0"/>
+         <inertia ixx="0.0" iyy="0.0" izz="0.0" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="fixed" name="ur5e_wrist_3_link2ur5e_rq_mount_fixed">
+      <parent link="ur5e_wrist_3_link"/>
+      <child link="ur5e_rq_mount"/>
+      <origin xyz="0.0 0.1 0.0" rpy="-1.5707963267948957 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_base_mount">
+      <inertial>
+         <origin xyz="-0.0003605835958214157 8.536274800937428e-05 -5.9199141450506514e-05" rpy="0.0014791760287071742 -1.56795063718557 -3.1415926535897807"/>
+         <mass value="0.15000285516377976"/>
+         <inertia ixx="0.00010234548901794908" iyy="5.35996872189825e-05" izz="5.217176310506675e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_base_mount">
+         <origin xyz="-0.0003605835958214157 8.536274800937428e-05 -5.9199141450506514e-05" rpy="0.0014791760287073963 -1.5679506371855703 -3.141592653589781"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_base_mount_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_base_mount">
+         <origin xyz="-0.0003605835958214157 8.536274800937428e-05 -5.9199141450506514e-05" rpy="0.0014791760287073963 -1.5679506371855703 -3.141592653589781"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_base_mount_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_rq_mount2ur5e_rq_base_mount_fixed">
+      <parent link="ur5e_rq_mount"/>
+      <child link="ur5e_rq_base_mount"/>
+      <origin xyz="0.0 0.0 0.007" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_base">
+      <inertial>
+         <origin xyz="0.0 -2.70394e-05 0.0354675" rpy="-0.0030569776193478805 0.0 0.0"/>
+         <mass value="0.777441"/>
+         <inertia ixx="0.000260285" iyy="0.000225381" izz="0.000152708" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_base">
+         <origin xyz="9.195807492645048e-08 -2.7039432501497943e-05 0.03546748056726998" rpy="-0.003056976731286905 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_base_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_base">
+         <origin xyz="9.195807492645048e-08 -2.7039432501497943e-05 0.03546748056726998" rpy="-0.003056976731286905 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_base_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_rq_base_mount2ur5e_rq_base_fixed">
+      <parent link="ur5e_rq_base_mount"/>
+      <child link="ur5e_rq_base"/>
+      <origin xyz="0.0 0.0 0.0038" rpy="0.0 0.0 -1.5707963267948957"/>
+   </joint>
+   <link name="ur5e_rq_right_driver">
+      <inertial>
+         <origin xyz="2.96931e-12 0.0177547 0.00107314" rpy="1.6425151722801996 0.0 0.0"/>
+         <mass value="0.00899563"/>
+         <inertia ixx="1.72352e-06" iyy="1.60906e-06" izz="3.22006e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_driver">
+         <origin xyz="1.7537005812491011e-12 0.017754693150029695 0.0010731416468995106" rpy="1.6425159211874887 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_driver_767676ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_driver">
+         <origin xyz="1.7537005812491011e-12 0.017754693150029695 0.0010731416468995106" rpy="1.6425159211874887 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_driver_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_right_driver_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_right_driver_joint">
+      <parent link="ur5e_rq_base"/>
+      <child link="ur5e_rq_right_driver_joint_jointbody"/>
+      <origin xyz="0.0 0.0306011 0.054904" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="0.0" upper="0.8" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_right_driver_joint_offset">
+      <parent link="ur5e_rq_right_driver_joint_jointbody"/>
+      <child link="ur5e_rq_right_driver"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_right_coupler">
+      <inertial>
+         <origin xyz="0.0 0.00301209 0.0232175" rpy="0.0 0.12903854724165864 1.5707963267948966"/>
+         <mass value="0.0140974"/>
+         <inertia ixx="4.16206e-06" iyy="3.52216e-06" izz="8.88131e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_coupler">
+         <origin xyz="-1.8532735042340603e-12 0.003012085395078747 0.023217538120512138" rpy="0.0 0.1290387539540303 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_coupler_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_coupler">
+         <origin xyz="-1.8532735042340603e-12 0.003012085395078747 0.023217538120512138" rpy="0.0 0.1290387539540303 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_coupler_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_right_coupler_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_right_coupler_joint">
+      <parent link="ur5e_rq_right_driver"/>
+      <child link="ur5e_rq_right_coupler_joint_jointbody"/>
+      <origin xyz="0.0 0.0315 -0.0041" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-1.57" upper="0.0" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_right_coupler_joint_offset">
+      <parent link="ur5e_rq_right_coupler_joint_jointbody"/>
+      <child link="ur5e_rq_right_coupler"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_right_spring_link">
+      <inertial>
+         <origin xyz="-8.65005e-09 0.0181624 0.0212658" rpy="0.0 0.7068443151232264 1.5707963267948966"/>
+         <mass value="0.0221642"/>
+         <inertia ixx="8.96853e-06" iyy="6.71733e-06" izz="2.63931e-06" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_spring_link">
+         <origin xyz="-8.59210643822588e-09 0.01816239947507198 0.021265809170727384" rpy="0.0 0.7068434854249181 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_spring_link_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_spring_link">
+         <origin xyz="-8.59210643822588e-09 0.01816239947507198 0.021265809170727384" rpy="0.0 0.7068434854249181 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_spring_link_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_right_spring_link_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_right_spring_link_joint">
+      <parent link="ur5e_rq_base"/>
+      <child link="ur5e_rq_right_spring_link_joint_jointbody"/>
+      <origin xyz="0.0 0.0132 0.0609" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-0.29670597283" upper="0.8" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_right_spring_link_joint_offset">
+      <parent link="ur5e_rq_right_spring_link_joint_jointbody"/>
+      <child link="ur5e_rq_right_spring_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_right_follower">
+      <inertial>
+         <origin xyz="0.0 -0.011046 0.0124786" rpy="0.32977841348127324 0.0 0.0"/>
+         <mass value="0.0125222"/>
+         <inertia ixx="2.67415e-06" iyy="2.4559e-06" izz="6.02031e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_follower">
+         <origin xyz="-8.220502333837798e-08 -0.011045964668534759 0.012478640431123105" rpy="0.33435605711837163 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_follower_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_follower">
+         <origin xyz="-8.220502333837798e-08 -0.011045964668534759 0.012478640431123105" rpy="0.33435605711837163 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_follower_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_right_follower_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_right_follower_joint">
+      <parent link="ur5e_rq_right_spring_link"/>
+      <child link="ur5e_rq_right_follower_joint_jointbody"/>
+      <origin xyz="0.0 0.037000000000000005 0.044" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-0.872664" upper="0.872664" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_right_follower_joint_offset">
+      <parent link="ur5e_rq_right_follower_joint_jointbody"/>
+      <child link="ur5e_rq_right_follower"/>
+      <origin xyz="-0.0 0.018 -0.0065" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_right_pad">
+      <inertial>
+         <origin xyz="0.0 -0.0025 0.0185" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.0035"/>
+         <inertia ixx="4.73958e-07" iyy="3.64583e-07" izz="1.23958e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_pad">
+         <origin xyz="2.0317422072666489e-19 -0.002499999999999999 0.01851737527478258" rpy="0.0 0.0 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_pad_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_rq_right_follower2ur5e_rq_right_pad_fixed">
+      <parent link="ur5e_rq_right_follower"/>
+      <child link="ur5e_rq_right_pad"/>
+      <origin xyz="0.0 -0.0189 0.01352" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_right_silicone_pad">
+      <inertial>
+         <origin xyz="-4.761896082112331e-19 -0.00579999995231628 0.018517375274782567" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.001302811839479651"/>
+         <inertia ixx="2.008043211325311e-07" iyy="1.4953600644593616e-07" izz="5.182418100517515e-08" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_silicone_pad">
+         <origin xyz="-4.761896082112331e-19 -0.00579999995231628 0.018517375274782567" rpy="0.0 0.0 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_silicone_pad_262626ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_rq_right_pad2ur5e_rq_right_silicone_pad_fixed">
+      <parent link="ur5e_rq_right_pad"/>
+      <child link="ur5e_rq_right_silicone_pad"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_left_driver">
+      <inertial>
+         <origin xyz="0.0 0.0177547 0.00107314" rpy="1.6425151722801996 0.0 0.0"/>
+         <mass value="0.00899563"/>
+         <inertia ixx="1.72352e-06" iyy="1.60906e-06" izz="3.22006e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_driver">
+         <origin xyz="1.7537005812491011e-12 0.017754693150029695 0.0010731416468995106" rpy="1.6425159211874887 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_driver_767676ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_driver">
+         <origin xyz="1.7537005812491011e-12 0.017754693150029695 0.0010731416468995106" rpy="1.6425159211874887 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_driver_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_left_driver_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_left_driver_joint">
+      <parent link="ur5e_rq_base"/>
+      <child link="ur5e_rq_left_driver_joint_jointbody"/>
+      <origin xyz="0.0 -0.0306011 0.054904" rpy="0.0 0.0 3.141592653589793"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="0.0" upper="0.8" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_left_driver_joint_offset">
+      <parent link="ur5e_rq_left_driver_joint_jointbody"/>
+      <child link="ur5e_rq_left_driver"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_left_coupler">
+      <inertial>
+         <origin xyz="0.0 0.00301209 0.0232175" rpy="0.0 0.12903854724165864 1.5707963267948966"/>
+         <mass value="0.0140974"/>
+         <inertia ixx="4.16206e-06" iyy="3.52216e-06" izz="8.88131e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_coupler">
+         <origin xyz="-1.8532735042340603e-12 0.003012085395078747 0.023217538120512138" rpy="0.0 0.1290387539540303 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_coupler_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_coupler">
+         <origin xyz="-1.8532735042340603e-12 0.003012085395078747 0.023217538120512138" rpy="0.0 0.1290387539540303 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_coupler_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_left_coupler_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_left_coupler_joint">
+      <parent link="ur5e_rq_left_driver"/>
+      <child link="ur5e_rq_left_coupler_joint_jointbody"/>
+      <origin xyz="0.0 0.0315 -0.0041" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-1.57" upper="0.0" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_left_coupler_joint_offset">
+      <parent link="ur5e_rq_left_coupler_joint_jointbody"/>
+      <child link="ur5e_rq_left_coupler"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_left_spring_link">
+      <inertial>
+         <origin xyz="-8.65005e-09 0.0181624 0.0212658" rpy="0.0 0.7068443151232264 1.5707963267948966"/>
+         <mass value="0.0221642"/>
+         <inertia ixx="8.96853e-06" iyy="6.71733e-06" izz="2.63931e-06" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_spring_link">
+         <origin xyz="-8.59210643822588e-09 0.01816239947507198 0.021265809170727384" rpy="0.0 0.7068434854249181 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_spring_link_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_spring_link">
+         <origin xyz="-8.59210643822588e-09 0.01816239947507198 0.021265809170727384" rpy="0.0 0.7068434854249181 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_spring_link_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_left_spring_link_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_left_spring_link_joint">
+      <parent link="ur5e_rq_base"/>
+      <child link="ur5e_rq_left_spring_link_joint_jointbody"/>
+      <origin xyz="0.0 -0.0132 0.0609" rpy="0.0 0.0 3.141592653589793"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-0.29670597283" upper="0.8" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_left_spring_link_joint_offset">
+      <parent link="ur5e_rq_left_spring_link_joint_jointbody"/>
+      <child link="ur5e_rq_left_spring_link"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_left_follower">
+      <inertial>
+         <origin xyz="0.0 -0.011046 0.0124786" rpy="0.32977841348127324 0.0 0.0"/>
+         <mass value="0.0125222"/>
+         <inertia ixx="2.67415e-06" iyy="2.4559e-06" izz="6.02031e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_follower">
+         <origin xyz="-8.220502333837798e-08 -0.011045964668534759 0.012478640431123105" rpy="0.33435605711837163 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_follower_262626ff.obj"/>
+         </geometry>
+      </visual>
+      <visual name="ur5e_rq_follower">
+         <origin xyz="-8.220502333837798e-08 -0.011045964668534759 0.012478640431123105" rpy="0.33435605711837163 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_follower_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <link name="ur5e_rq_left_follower_joint_jointbody">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="ur5e_rq_left_follower_joint">
+      <parent link="ur5e_rq_left_spring_link"/>
+      <child link="ur5e_rq_left_follower_joint_jointbody"/>
+      <origin xyz="0.0 0.037000000000000005 0.044" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-0.872664" upper="0.872664" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="ur5e_rq_left_follower_joint_offset">
+      <parent link="ur5e_rq_left_follower_joint_jointbody"/>
+      <child link="ur5e_rq_left_follower"/>
+      <origin xyz="-0.0 0.018 -0.0065" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_left_pad">
+      <inertial>
+         <origin xyz="0.0 -0.0025 0.0185" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.0035"/>
+         <inertia ixx="4.73958e-07" iyy="3.64583e-07" izz="1.23958e-07" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_pad">
+         <origin xyz="2.0317422072666489e-19 -0.002499999999999999 0.01851737527478258" rpy="0.0 0.0 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_pad_808080ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_rq_left_follower2ur5e_rq_left_pad_fixed">
+      <parent link="ur5e_rq_left_follower"/>
+      <child link="ur5e_rq_left_pad"/>
+      <origin xyz="0.0 -0.0189 0.01352" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="ur5e_rq_left_silicone_pad">
+      <inertial>
+         <origin xyz="-4.761896082112331e-19 -0.00579999995231628 0.018517375274782567" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.001302811839479651"/>
+         <inertia ixx="2.008043211325311e-07" iyy="1.4953600644593616e-07" izz="5.182418100517515e-08" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="ur5e_rq_silicone_pad">
+         <origin xyz="-4.761896082112331e-19 -0.00579999995231628 0.018517375274782567" rpy="0.0 0.0 1.5707963267948966"/>
+         <geometry>
+            <mesh filename="meshes/converted_ur5e_rq_silicone_pad_262626ff.obj"/>
+         </geometry>
+      </visual>
+   </link>
+   <joint type="fixed" name="ur5e_rq_left_pad2ur5e_rq_left_silicone_pad_fixed">
+      <parent link="ur5e_rq_left_pad"/>
+      <child link="ur5e_rq_left_silicone_pad"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+</robot>
