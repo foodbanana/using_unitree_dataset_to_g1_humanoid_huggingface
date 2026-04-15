@@ -1,0 +1,9 @@
+huggingface_hub[cli]
+datasets
+numpy
+matplotlib
+mujoco
+opencv-python
+pin
+pin-pink
+mjcf-urdf-simple-converter
