@@ -5,4 +5,8 @@ venv/
 env/
 .VSCode/
 *.mjb
-EOT
+EOT*.csv
+joint_angle_graphs/
+joint_angle_graphs/
+*.csv
+*.png

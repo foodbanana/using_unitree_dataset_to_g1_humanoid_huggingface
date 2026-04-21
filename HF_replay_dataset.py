@@ -3,8 +3,8 @@ import time
 import mujoco
 import mujoco.viewer
 import numpy as np
-from datasets import load_dataset
 
+from hf_dataset_loader import load_dataset_with_cache_fallback
 from replay_args import build_replay_args
 
 
@@ -108,7 +108,7 @@ def main() -> None:
         print(f"  {ds_joint:>20s} -> {mj_joint:<28s} (qpos[{qpos_adr}])")
 
     print(f"[INFO] Loading dataset: {args.repo_id} ({args.split})")
-    dataset = load_dataset(args.repo_id, split=args.split)
+    dataset = load_dataset_with_cache_fallback(args.repo_id, split=args.split)
 
     start_episode = args.episode_index
     num_episodes = max(1, args.num_episodes)

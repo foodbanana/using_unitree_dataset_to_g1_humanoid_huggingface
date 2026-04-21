@@ -1,7 +1,8 @@
 import argparse
 
 import numpy as np
-from datasets import load_dataset
+
+from hf_dataset_loader import load_dataset_with_cache_fallback
 
 
 def parse_args():
@@ -43,8 +44,7 @@ def print_nested(prefix, value):
 def main():
     args = parse_args()
 
-    ds = load_dataset(args.repo_id)
-    split_ds = ds[args.split]
+    split_ds = load_dataset_with_cache_fallback(args.repo_id, split=args.split)
 
     print("=== 데이터셋 퀵 체크 ===")
     print(f"repo_id: {args.repo_id}")

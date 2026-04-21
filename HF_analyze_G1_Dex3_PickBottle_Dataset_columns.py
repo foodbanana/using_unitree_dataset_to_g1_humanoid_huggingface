@@ -1,9 +1,10 @@
 import numpy as np
-from datasets import load_dataset
 import matplotlib.pyplot as plt
 
+from hf_dataset_loader import load_dataset_with_cache_fallback
+
 # 1. 데이터 로드
-ds = load_dataset("unitreerobotics/G1_Dex3_PickBottle_Dataset")
+ds = load_dataset_with_cache_fallback("unitreerobotics/G1_Dex3_PickBottle_Dataset")
 train_data = ds['train']
 
 # 2. 전체 데이터를 넘파이 배열로 변환
