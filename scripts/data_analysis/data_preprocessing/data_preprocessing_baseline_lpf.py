@@ -85,6 +85,8 @@ NORM_MODULE_MAP = {
     "min_max":            "min_max_normalization",
     "moving_std_min_max": "moving_std_min_max_normalization",
     "delta":              "delta_normalization",
+    "joint_limit_range":      "joint_limit_range_normalization",
+    "joint_limit_range_0to1": "joint_limit_range_0to1_normalization",
 }
 DEFAULT_NORM_METHOD = "baseline"
 NOISE_MULTIPLIER    = 3.0   # 동적 노이즈 임계값 배수 K (min_max, moving_std_min_max 에서 사용)
@@ -193,8 +195,8 @@ def plot_normalized_episode(
     lpf_order: int,
 ) -> None:
     """
-    LPF → 정규화 적용 후 결과를 그룹별 서브플롯으로 시각화한다.
-    정규화 방법은 norm_fn 으로 동적 결정된다.
+    LPF → norm_method 정규화 후 시각화한다.
+    joint_limit_range 선택 시: LPF → 가동 범위(Upper-Lower)로 나누기
     """
     episode_df = episode_df.sort_values("frame_index")
     frame_seconds = episode_df["frame_index"].to_numpy(dtype=float) / FPS
@@ -203,12 +205,15 @@ def plot_normalized_episode(
     state_matrix   = extract_joint_matrix(episode_df, control_type, hand_type, joint_order)
     state_filtered = apply_lowpass_filter(state_matrix, cutoff_hz=cutoff_hz, order=lpf_order)
 
-    # ② 정규화 적용 (norm_method 에 따라 동적 처리)
+    # ② norm_method 정규화 적용
+    # joint_order, hand_type 을 kwargs 로 전달 → joint_limit_range 방법에서 사용
     normalized = norm_fn(
         state_filtered,
         baseline_std=baseline_std,
         std_window=std_window,
         noise_multiplier=noise_multiplier,
+        joint_order=joint_order,
+        hand_type=hand_type,
     )
 
     joint_to_idx = {name: i for i, name in enumerate(joint_order)}
