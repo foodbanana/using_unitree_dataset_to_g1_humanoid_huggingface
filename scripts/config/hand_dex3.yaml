@@ -1,0 +1,38 @@
+# Dex3 hand joints — 14 DOF (HuggingFace dataset naming: kPascalCase)
+# Used by: Upper_body_control datasets
+# Note: left hand order is Thumb→Middle→Index; right hand is Thumb→Index→Middle
+#       This asymmetry reflects the actual dataset recording order.
+
+joint_order:
+  - kLeftHandThumb0
+  - kLeftHandThumb1
+  - kLeftHandThumb2
+  - kLeftHandMiddle0
+  - kLeftHandMiddle1
+  - kLeftHandIndex0
+  - kLeftHandIndex1
+  - kRightHandThumb0
+  - kRightHandThumb1
+  - kRightHandThumb2
+  - kRightHandIndex0
+  - kRightHandIndex1
+  - kRightHandMiddle0
+  - kRightHandMiddle1
+
+joint_groups:
+  left_hand:
+    - kLeftHandThumb0
+    - kLeftHandThumb1
+    - kLeftHandThumb2
+    - kLeftHandMiddle0
+    - kLeftHandMiddle1
+    - kLeftHandIndex0
+    - kLeftHandIndex1
+  right_hand:
+    - kRightHandThumb0
+    - kRightHandThumb1
+    - kRightHandThumb2
+    - kRightHandIndex0
+    - kRightHandIndex1
+    - kRightHandMiddle0
+    - kRightHandMiddle1

@@ -1,0 +1,6 @@
+left_hand:
+  - left_dex1_finger_joint_1
+  - left_dex1_finger_joint_2
+right_hand:
+  - right_dex1_finger_joint_1
+  - right_dex1_finger_joint_2

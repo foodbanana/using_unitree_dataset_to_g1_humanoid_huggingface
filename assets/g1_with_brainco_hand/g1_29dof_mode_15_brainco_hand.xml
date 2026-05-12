@@ -2,6 +2,7 @@
   <compiler angle="radian" meshdir="meshes/"/>
 
   <default>
+    <joint damping="5" frictionloss="0.1" armature="0.02" />
     <default class="g1">
       <position kp="500" dampratio="1" inheritrange="1"/>
     </default>

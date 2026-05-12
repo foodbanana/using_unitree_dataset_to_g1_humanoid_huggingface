@@ -1,0 +1,32 @@
+# Brainco hand joints — 12 DOF (HuggingFace dataset naming: kPascalCase)
+# Used by: Upper_body_control datasets and WBT datasets
+
+joint_order:
+  - kLeftHandThumb
+  - kLeftHandThumbAux
+  - kLeftHandIndex
+  - kLeftHandMiddle
+  - kLeftHandRing
+  - kLeftHandPinky
+  - kRightHandThumb
+  - kRightHandThumbAux
+  - kRightHandIndex
+  - kRightHandMiddle
+  - kRightHandRing
+  - kRightHandPinky
+
+joint_groups:
+  left_hand:
+    - kLeftHandThumb
+    - kLeftHandThumbAux
+    - kLeftHandIndex
+    - kLeftHandMiddle
+    - kLeftHandRing
+    - kLeftHandPinky
+  right_hand:
+    - kRightHandThumb
+    - kRightHandThumbAux
+    - kRightHandIndex
+    - kRightHandMiddle
+    - kRightHandRing
+    - kRightHandPinky

@@ -1,0 +1,34 @@
+left_hand:
+  - left_thumb_metacarpal_joint
+  - left_thumb_proximal_joint
+  - left_thumb_distal_joint
+  - left_thumb_tip_joint
+  - left_index_proximal_joint
+  - left_index_distal_joint
+  - left_index_tip_joint
+  - left_middle_proximal_joint
+  - left_middle_distal_joint
+  - left_middle_tip_joint
+  - left_ring_proximal_joint
+  - left_ring_distal_joint
+  - left_ring_tip_joint
+  - left_pinky_proximal_joint
+  - left_pinky_distal_joint
+  - left_pinky_tip_joint
+right_hand:
+  - right_thumb_metacarpal_joint
+  - right_thumb_proximal_joint
+  - right_thumb_distal_joint
+  - right_thumb_tip
+  - right_index_proximal_joint
+  - right_index_distal_joint
+  - right_index_tip_joint
+  - right_middle_proximal_joint
+  - right_middle_distal_joint
+  - right_middle_tip_joint
+  - right_ring_proximal_joint
+  - right_ring_distal_joint
+  - right_ring_tip_joint
+  - right_pinky_proximal_joint
+  - right_pinky_distal_joint
+  - right_pinky_tip_joint

@@ -1,0 +1,69 @@
+# G1 base body joints — 29 DOF (HuggingFace dataset naming: kPascalCase)
+# Used by: WBT datasets (combined with a hand config)
+
+joint_order:
+  - kLeftHipPitch
+  - kLeftHipRoll
+  - kLeftHipYaw
+  - kLeftKnee
+  - kLeftAnklePitch
+  - kLeftAnkleRoll
+  - kRightHipPitch
+  - kRightHipRoll
+  - kRightHipYaw
+  - kRightKnee
+  - kRightAnklePitch
+  - kRightAnkleRoll
+  - kWaistYaw
+  - kWaistRoll
+  - kWaistPitch
+  - kLeftShoulderPitch
+  - kLeftShoulderRoll
+  - kLeftShoulderYaw
+  - kLeftElbow
+  - kLeftWristRoll
+  - kLeftWristPitch
+  - kLeftWristYaw
+  - kRightShoulderPitch
+  - kRightShoulderRoll
+  - kRightShoulderYaw
+  - kRightElbow
+  - kRightWristRoll
+  - kRightWristPitch
+  - kRightWristYaw
+
+joint_groups:
+  left_leg:
+    - kLeftHipPitch
+    - kLeftHipRoll
+    - kLeftHipYaw
+    - kLeftKnee
+    - kLeftAnklePitch
+    - kLeftAnkleRoll
+  right_leg:
+    - kRightHipPitch
+    - kRightHipRoll
+    - kRightHipYaw
+    - kRightKnee
+    - kRightAnklePitch
+    - kRightAnkleRoll
+  waist:
+    - kWaistYaw
+    - kWaistRoll
+    - kWaistPitch
+  left_arm:
+    - kLeftShoulderPitch
+    - kLeftShoulderRoll
+    - kLeftShoulderYaw
+    - kLeftElbow
+    - kLeftWristRoll
+    - kLeftWristPitch
+    - kLeftWristYaw
+  right_arm:
+    - kRightShoulderPitch
+    - kRightShoulderRoll
+    - kRightShoulderYaw
+    - kRightElbow
+    - kRightWristRoll
+    - kRightWristPitch
+    - kRightWristYaw

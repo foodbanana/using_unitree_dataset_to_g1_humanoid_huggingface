@@ -1,0 +1,475 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
+import numpy as np
+import pandas as pd
+
+
+# ----------------------------
+# Runtime settings (see docs/hf_dataset_installed.md)
+# -----------------------------
+BASIC_PATH = "/mnt/hdd/huggingface/hub"
+FOLDER_NAME = "UnifoLM_G1_Brainco_Dataset"
+
+# IMPORTANT: this must include the "datasets--" prefix.
+DATASET_NAME = "datasets--unitreerobotics--G1_Brainco_GraspOreo_Dataset"
+
+# Plot first N episodes only.
+MAX_EPISODES_TO_PLOT = 5
+
+# Output root
+GRAPH_ROOT_DIR = Path(
+    "/home/taeung/g1_datasets_huggingface/graphs/unannotated_graphs_sample"
+)
+
+FPS = 30.0
+X_TICK_SECONDS = 3.0
+
+matplotlib.use("Agg")
+
+
+UPPER_BODY_JOINT_ORDER_BRAINCO = [
+    "kLeftShoulderPitch",
+    "kLeftShoulderRoll",
+    "kLeftShoulderYaw",
+    "kLeftElbow",
+    "kLeftWristRoll",
+    "kLeftWristPitch",
+    "kLeftWristYaw",
+    "kRightShoulderPitch",
+    "kRightShoulderRoll",
+    "kRightShoulderYaw",
+    "kRightElbow",
+    "kRightWristRoll",
+    "kRightWristPitch",
+    "kRightWristYaw",
+    "kLeftHandThumb",
+    "kLeftHandThumbAux",
+    "kLeftHandIndex",
+    "kLeftHandMiddle",
+    "kLeftHandRing",
+    "kLeftHandPinky",
+    "kRightHandThumb",
+    "kRightHandThumbAux",
+    "kRightHandIndex",
+    "kRightHandMiddle",
+    "kRightHandRing",
+    "kRightHandPinky",
+]
+
+UPPER_BODY_JOINT_ORDER_DEX3 = [
+    "kLeftShoulderPitch",
+    "kLeftShoulderRoll",
+    "kLeftShoulderYaw",
+    "kLeftElbow",
+    "kLeftWristRoll",
+    "kLeftWristPitch",
+    "kLeftWristYaw",
+    "kRightShoulderPitch",
+    "kRightShoulderRoll",
+    "kRightShoulderYaw",
+    "kRightElbow",
+    "kRightWristRoll",
+    "kRightWristPitch",
+    "kRightWristYaw",
+    "kLeftHandThumb0",
+    "kLeftHandThumb1",
+    "kLeftHandThumb2",
+    "kLeftHandMiddle0",
+    "kLeftHandMiddle1",
+    "kLeftHandIndex0",
+    "kLeftHandIndex1",
+    "kRightHandThumb0",
+    "kRightHandThumb1",
+    "kRightHandThumb2",
+    "kRightHandIndex0",
+    "kRightHandIndex1",
+    "kRightHandMiddle0",
+    "kRightHandMiddle1",
+]
+
+WBT_HAND_ORDER_BRAINCO = [
+    "kLeftHandThumb",
+    "kLeftHandThumbAux",
+    "kLeftHandIndex",
+    "kLeftHandMiddle",
+    "kLeftHandRing",
+    "kLeftHandPinky",
+    "kRightHandThumb",
+    "kRightHandThumbAux",
+    "kRightHandIndex",
+    "kRightHandMiddle",
+    "kRightHandRing",
+    "kRightHandPinky",
+]
+
+WBT_HAND_ORDER_INSPIRE = [
+    "kLeftHandIndex",
+    "kLeftHandMiddle",
+    "kLeftHandRing",
+    "kLeftHandPinky",
+    "kLeftHandThumb",
+    "kLeftHandThumbAux",
+    "kRightHandIndex",
+    "kRightHandMiddle",
+    "kRightHandRing",
+    "kRightHandPinky",
+    "kRightHandThumb",
+    "kRightHandThumbAux",
+]
+
+WBT_BODY_JOINT_ORDER = [
+    "kLeftHipPitch",
+    "kLeftHipRoll",
+    "kLeftHipYaw",
+    "kLeftKnee",
+    "kLeftAnklePitch",
+    "kLeftAnkleRoll",
+    "kRightHipPitch",
+    "kRightHipRoll",
+    "kRightHipYaw",
+    "kRightKnee",
+    "kRightAnklePitch",
+    "kRightAnkleRoll",
+    "kWaistYaw",
+    "kWaistRoll",
+    "kWaistPitch",
+    "kLeftShoulderPitch",
+    "kLeftShoulderRoll",
+    "kLeftShoulderYaw",
+    "kLeftElbow",
+    "kLeftWristRoll",
+    "kLeftWristPitch",
+    "kLeftWristYaw",
+    "kRightShoulderPitch",
+    "kRightShoulderRoll",
+    "kRightShoulderYaw",
+    "kRightElbow",
+    "kRightWristRoll",
+    "kRightWristPitch",
+    "kRightWristYaw",
+]
+
+
+UPPER_BODY_GROUPS = {
+    "left_arm": [
+        "kLeftShoulderPitch",
+        "kLeftShoulderRoll",
+        "kLeftShoulderYaw",
+        "kLeftElbow",
+        "kLeftWristRoll",
+        "kLeftWristPitch",
+        "kLeftWristYaw",
+    ],
+    "right_arm": [
+        "kRightShoulderPitch",
+        "kRightShoulderRoll",
+        "kRightShoulderYaw",
+        "kRightElbow",
+        "kRightWristRoll",
+        "kRightWristPitch",
+        "kRightWristYaw",
+    ],
+    "left_hand": [
+        "kLeftHandThumb",
+        "kLeftHandThumbAux",
+        "kLeftHandIndex",
+        "kLeftHandMiddle",
+        "kLeftHandRing",
+        "kLeftHandPinky",
+    ],
+    "right_hand": [
+        "kRightHandThumb",
+        "kRightHandThumbAux",
+        "kRightHandIndex",
+        "kRightHandMiddle",
+        "kRightHandRing",
+        "kRightHandPinky",
+    ],
+}
+
+DEX3_HAND_GROUPS = {
+    "left_hand": [
+        "kLeftHandThumb0",
+        "kLeftHandThumb1",
+        "kLeftHandThumb2",
+        "kLeftHandIndex0",
+        "kLeftHandIndex1",
+        "kLeftHandMiddle0",
+        "kLeftHandMiddle1",
+    ],
+    "right_hand": [
+        "kRightHandThumb0",
+        "kRightHandThumb1",
+        "kRightHandThumb2",
+        "kRightHandIndex0",
+        "kRightHandIndex1",
+        "kRightHandMiddle0",
+        "kRightHandMiddle1",
+    ],
+}
+
+WBT_GROUPS = {
+    "left_arm": UPPER_BODY_GROUPS["left_arm"],
+    "right_arm": UPPER_BODY_GROUPS["right_arm"],
+    "left_hand": UPPER_BODY_GROUPS["left_hand"],
+    "right_hand": UPPER_BODY_GROUPS["right_hand"],
+    "waist": ["kWaistYaw", "kWaistRoll", "kWaistPitch"],
+    "left_leg": [
+        "kLeftHipPitch",
+        "kLeftHipRoll",
+        "kLeftHipYaw",
+        "kLeftKnee",
+        "kLeftAnklePitch",
+        "kLeftAnkleRoll",
+    ],
+    "right_leg": [
+        "kRightHipPitch",
+        "kRightHipRoll",
+        "kRightHipYaw",
+        "kRightKnee",
+        "kRightAnklePitch",
+        "kRightAnkleRoll",
+    ],
+}
+
+
+def classify_control_type(folder_name: str, dataset_name: str) -> str:
+    combined = f"{folder_name} {dataset_name}".lower()
+    return "WBT" if "wbt" in combined else "Upper_body_control"
+
+
+def classify_hand_type(folder_name: str, dataset_name: str) -> str:
+    combined = f"{folder_name} {dataset_name}".lower()
+    if "brainco" in combined:
+        return "g1_with_brainco"
+    if "dex3" in combined:
+        return "g1_with_dex3"
+    if "inspire" in combined:
+        return "g1_with_inspire"
+    raise ValueError("Hand type could not be inferred from folder_name/dataset_name.")
+
+
+def validate_configuration(control_type: str, hand_type: str) -> None:
+    if hand_type == "g1_with_inspire" and control_type != "WBT":
+        raise ValueError("Inspire hand exists only in WBT datasets.")
+
+
+def resolve_snapshot_dir(base_path: str, folder_name: str, dataset_name: str) -> Path:
+    snapshots_dir = Path(base_path) / folder_name / dataset_name / "snapshots"
+    if not snapshots_dir.exists():
+        raise FileNotFoundError(f"Snapshots dir not found: {snapshots_dir}")
+    snapshots = sorted([p for p in snapshots_dir.iterdir() if p.is_dir()])
+    if not snapshots:
+        raise FileNotFoundError(f"No snapshots found under: {snapshots_dir}")
+    return snapshots[-1]
+
+
+def find_first_parquet_file(snapshot_dir: Path) -> Path:
+    data_dir = snapshot_dir / "data"
+    if not data_dir.exists():
+        raise FileNotFoundError(f"Data dir not found: {data_dir}")
+    parquet_files = sorted(data_dir.rglob("*.parquet"))
+    if not parquet_files:
+        raise FileNotFoundError(f"No parquet files found under: {data_dir}")
+    return parquet_files[0]
+
+
+def get_wbt_hand_order(hand_type: str) -> list[str]:
+    if hand_type == "g1_with_brainco":
+        return WBT_HAND_ORDER_BRAINCO
+    if hand_type == "g1_with_inspire":
+        return WBT_HAND_ORDER_INSPIRE
+    raise ValueError(f"Unsupported WBT hand type: {hand_type}")
+
+
+def get_joint_order(control_type: str, hand_type: str) -> list[str]:
+    if control_type == "WBT":
+        hand_order = get_wbt_hand_order(hand_type)
+        return WBT_BODY_JOINT_ORDER + hand_order
+
+    if hand_type == "g1_with_dex3":
+        return UPPER_BODY_JOINT_ORDER_DEX3
+    if hand_type == "g1_with_inspire":
+        raise ValueError("Upper-body Inspire joint order is not defined.")
+    return UPPER_BODY_JOINT_ORDER_BRAINCO
+
+
+def get_hand_groups_from_order(hand_order: list[str]) -> dict[str, list[str]]:
+    half = len(hand_order) // 2
+    return {"left_hand": hand_order[:half], "right_hand": hand_order[half:]}
+
+
+def get_joint_groups(control_type: str, hand_type: str) -> dict[str, list[str]]:
+    if control_type == "WBT":
+        hand_order = get_wbt_hand_order(hand_type)
+        hand_groups = get_hand_groups_from_order(hand_order)
+        return {
+            "left_arm": UPPER_BODY_GROUPS["left_arm"],
+            "right_arm": UPPER_BODY_GROUPS["right_arm"],
+            "left_hand": hand_groups["left_hand"],
+            "right_hand": hand_groups["right_hand"],
+            "waist": WBT_GROUPS["waist"],
+            "left_leg": WBT_GROUPS["left_leg"],
+            "right_leg": WBT_GROUPS["right_leg"],
+        }
+
+    if hand_type == "g1_with_dex3":
+        return {
+            "left_arm": UPPER_BODY_GROUPS["left_arm"],
+            "right_arm": UPPER_BODY_GROUPS["right_arm"],
+            "left_hand": DEX3_HAND_GROUPS["left_hand"],
+            "right_hand": DEX3_HAND_GROUPS["right_hand"],
+        }
+    if hand_type == "g1_with_inspire":
+        raise ValueError("Upper-body Inspire joint groups are not defined.")
+    return UPPER_BODY_GROUPS
+
+
+def build_output_dir(control_type: str, hand_type: str, dataset_name: str) -> Path:
+    return GRAPH_ROOT_DIR / control_type / hand_type / dataset_name
+
+
+def load_episode_dataframe(parquet_path: Path, control_type: str) -> pd.DataFrame:
+    if control_type == "WBT":
+        columns = [
+            "episode_index",
+            "frame_index",
+            "observation.state.robot_q_current",
+            "observation.state.hand_state",
+        ]
+    else:
+        columns = ["episode_index", "frame_index", "observation.state"]
+    return pd.read_parquet(parquet_path, columns=columns)
+
+
+def prepare_state_matrix(
+    episode_df: pd.DataFrame,
+    control_type: str,
+    hand_type: str,
+    joint_order: list[str],
+) -> np.ndarray:
+    if control_type == "WBT":
+        robot_q = np.stack(
+            episode_df["observation.state.robot_q_current"].to_numpy()
+        )
+        hand_state = np.stack(episode_df["observation.state.hand_state"].to_numpy())
+        body_start = 7
+        body_end = body_start + len(WBT_BODY_JOINT_ORDER)
+        if robot_q.shape[1] < body_end:
+            raise ValueError(
+                "robot_q_current does not contain enough joint values."
+            )
+        body_q = robot_q[:, body_start:body_end]
+        state_matrix = np.hstack([body_q, hand_state])
+    else:
+        state_series = episode_df["observation.state"]
+        state_matrix = np.stack(state_series.to_numpy())
+
+    if state_matrix.shape[1] != len(joint_order):
+        raise ValueError(
+            f"State length mismatch: got {state_matrix.shape[1]}, "
+            f"expected {len(joint_order)} for {control_type}/{hand_type}."
+        )
+    return state_matrix
+
+
+def plot_episode(
+    episode_df: pd.DataFrame,
+    episode_index: int,
+    joint_order: list[str],
+    joint_groups: dict[str, list[str]],
+    output_dir: Path,
+    control_type: str,
+    hand_type: str,
+) -> None:
+    episode_df = episode_df.sort_values("frame_index")
+    frame_seconds = episode_df["frame_index"].to_numpy(dtype=float) / FPS
+    state_matrix = prepare_state_matrix(
+        episode_df,
+        control_type,
+        hand_type,
+        joint_order,
+    )
+
+    joint_to_index = {name: idx for idx, name in enumerate(joint_order)}
+    group_items = list(joint_groups.items())
+
+    fig_height = max(3.0, 2.5 * len(group_items))
+    fig, axes = plt.subplots(
+        nrows=len(group_items),
+        ncols=1,
+        figsize=(16, fig_height),
+        sharex=True,
+    )
+    if len(group_items) == 1:
+        axes = [axes]
+
+    for ax, (group_name, joints) in zip(axes, group_items):
+        plotted = False
+        for joint_name in joints:
+            if joint_name not in joint_to_index:
+                continue
+            joint_idx = joint_to_index[joint_name]
+            ax.plot(frame_seconds, state_matrix[:, joint_idx], label=joint_name)
+            plotted = True
+
+        if not plotted:
+            ax.text(
+                0.5,
+                0.5,
+                "No matching joints",
+                transform=ax.transAxes,
+                ha="center",
+                va="center",
+            )
+        ax.set_ylabel("state")
+        ax.set_title(group_name)
+        ax.legend(loc="upper right", fontsize=8, ncol=2)
+        ax.xaxis.set_major_locator(MultipleLocator(X_TICK_SECONDS))
+
+    axes[-1].set_xlabel("time (s)")
+    fig.suptitle(f"Episode {episode_index}")
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"episode_{episode_index}.png"
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def main() -> None:
+    control_type = classify_control_type(FOLDER_NAME, DATASET_NAME)
+    hand_type = classify_hand_type(FOLDER_NAME, DATASET_NAME)
+    validate_configuration(control_type, hand_type)
+    joint_order = get_joint_order(control_type, hand_type)
+    joint_groups = get_joint_groups(control_type, hand_type)
+
+    snapshot_dir = resolve_snapshot_dir(BASIC_PATH, FOLDER_NAME, DATASET_NAME)
+    parquet_path = find_first_parquet_file(snapshot_dir)
+    df = load_episode_dataframe(parquet_path, control_type)
+
+    output_dir = build_output_dir(control_type, hand_type, DATASET_NAME)
+    for episode_index in range(MAX_EPISODES_TO_PLOT):
+        episode_df = df[df["episode_index"] == episode_index]
+        if episode_df.empty:
+            continue
+        plot_episode(
+            episode_df,
+            episode_index,
+            joint_order,
+            joint_groups,
+            output_dir,
+            control_type,
+            hand_type,
+        )
+
+
+if __name__ == "__main__":
+    main()
+
+

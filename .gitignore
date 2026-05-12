@@ -6,6 +6,7 @@ env/
 .VSCode/
 *.mjb
 EOT*.csv
+graphs/
 joint_angle_graphs/
 joint_angle_graphs/
 *.csv

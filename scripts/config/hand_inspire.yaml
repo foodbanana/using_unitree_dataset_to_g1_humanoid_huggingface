@@ -1,0 +1,32 @@
+# Inspire hand joints — 12 DOF (HuggingFace dataset naming: kPascalCase)
+# Used by: WBT datasets only (Inspire hand does not appear in Upper_body_control datasets)
+
+joint_order:
+  - kLeftHandIndex
+  - kLeftHandMiddle
+  - kLeftHandRing
+  - kLeftHandPinky
+  - kLeftHandThumb
+  - kLeftHandThumbAux
+  - kRightHandIndex
+  - kRightHandMiddle
+  - kRightHandRing
+  - kRightHandPinky
+  - kRightHandThumb
+  - kRightHandThumbAux
+
+joint_groups:
+  left_hand:
+    - kLeftHandIndex
+    - kLeftHandMiddle
+    - kLeftHandRing
+    - kLeftHandPinky
+    - kLeftHandThumb
+    - kLeftHandThumbAux
+  right_hand:
+    - kRightHandIndex
+    - kRightHandMiddle
+    - kRightHandRing
+    - kRightHandPinky
+    - kRightHandThumb
+    - kRightHandThumbAux

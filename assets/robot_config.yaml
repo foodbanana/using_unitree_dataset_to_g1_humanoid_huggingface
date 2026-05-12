@@ -1,0 +1,19 @@
+active_hand: "inspire_dfq"
+base_config_path: "config/g1_base.yaml"
+hand_config_paths:
+  inspire_dfq: "config/hand_inspire.yaml"
+  inspire_ftp: "config/hand_inspire_ftp.yaml"
+  dex1: "config/hand_dex1.yaml"
+  dex3: "config/hand_dex3.yaml"
+  brainco: "config/hand_brainco.yaml"
+configs:
+  - "config/g1_base.yaml"
+  - "config/hand_inspire.yaml"
+  - "config/hand_inspire_ftp.yaml"
+  - "config/hand_dex1.yaml"
+  - "config/hand_dex3.yaml"
+  - "config/hand_brainco.yaml"
+joint_groups:
+  - locomotion
+  - arms
+  - fingers

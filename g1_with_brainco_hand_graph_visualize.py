@@ -1,6 +1,7 @@
 from pathlib import Path
 from collections import Counter
 from datetime import datetime
+import argparse
 import re
 
 import matplotlib.pyplot as plt
@@ -38,20 +39,22 @@ MIN_HIGHLIGHT_SEGMENT_LEN = 12
 HIGHLIGHT_LINEWIDTH = 2.2
 HIGHLIGHT_ALPHA = 0.95
 
-# Winner-takes-all segmentation hyperparameters.
-MOTION_ACTIVITY_WINDOW = 10
-MOTION_MODE_SMOOTH_WINDOW = 15
-MOTION_REST_THRESHOLD = 0.05
-
 # Output settings
 DATASET_TAG = "g1_with_brainco_hand"
-ALGORITHM_TAG = "rolling_std_dominant_joint"
+ALGORITHM_TAG = "normalized_dq_dominant_joint"
 ANNOTATED_CSV_BASE_DIR = Path(
     "/home/taeung/g1_datasets_huggingface/joint_angle_graphs/g1_with_brainco_hand/csv files"
 )
 GRAPH_IMAGE_BASE_DIR = Path(
     "/home/taeung/g1_datasets_huggingface/joint_angle_graphs/g1_with_brainco_hand/graph_images"
 )
+
+# Core movement scoring pipeline settings
+NORMALIZATION_METHOD = "zscore"  # "zscore" or "minmax"
+LOWPASS_ALPHA = 0.25
+NOISE_MAD_SCALE = 2.8
+ACTIVITY_SMOOTH_WINDOW = 7
+MIN_ACTIVE_JOINT_SCORE = 1e-8
 
 # ----------------------------------
 # 2) Dataset joint order (fixed spec in huggingface. 
@@ -211,7 +214,31 @@ def find_parquet_file(dataset_root: Path) -> Path:
     candidates = sorted(dataset_root.glob("snapshots/*/data/**/*.parquet"))
     if not candidates:
         raise FileNotFoundError(f"No parquet file found under: {dataset_root}")
-    return candidates[0]
+    return candidates[-1]
+
+
+def parse_cli_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Visualize and annotate robot parquet dataset")
+    parser.add_argument(
+        "input_parquet",
+        nargs="?",
+        help="Optional parquet file path. If omitted, use hardcoded dataset root fallback.",
+    )
+    return parser.parse_args()
+
+
+def resolve_parquet_input(input_parquet: str | None) -> Path:
+    """Resolve parquet input path from CLI arg first, then fallback to default dataset root."""
+    if input_parquet:
+        parquet_path = Path(input_parquet).expanduser().resolve()
+        if not parquet_path.exists():
+            raise FileNotFoundError(f"Input parquet file not found: {parquet_path}")
+        if parquet_path.suffix.lower() != ".parquet":
+            raise ValueError(f"Input file must be a .parquet file: {parquet_path}")
+        return parquet_path
+
+    dataset_root = Path(BASIC_PATH) / FOLDER_NAME / DATASET_NAME
+    return find_parquet_file(dataset_root)
 
 # ex) validate_annotation_groups() -> {"left_arm": [0,1,2,3,4,5,6], "right_arm": [7,8,9,10,11,12,13], "left_hand": [14,15,16,17,18,19], "right_hand": [20,21,22,23,24,25]}, body
 def validate_annotation_groups() -> dict[str, list[int]]:
@@ -244,48 +271,103 @@ def add_group_state_columns(df: pd.DataFrame, group_indices: dict[str, list[int]
 # ex) _compute_group_scores(episode_df, group_indices, window_size) -> df with columns like 'left_arm_score' containing rolling mean of std for the joints in that group.
 # ex) group_indices = {"left_arm": [0,1,2,3,4,5,6], "right_arm": [7,8,9,10,11,12,13], "left_hand": [14,15,16,17,18,19], "right_hand": [20,21,22,23,24,25]}
 # ex) episode_df["observation.state"]에서 각 행마다 observation.state 벡터를 numpy array로 변환하고 각 joint별로 rolling std를 계산하여 joint_std_series에 저장. 
+def _normalize_state_matrix(state_matrix: np.ndarray, method: str = NORMALIZATION_METHOD) -> np.ndarray:
+    """Normalize each joint trajectory so movement magnitudes are comparable."""
+    if state_matrix.size == 0:
+        return state_matrix
+
+    if method == "minmax":
+        min_v = np.min(state_matrix, axis=0)
+        max_v = np.max(state_matrix, axis=0)
+        span = np.where((max_v - min_v) < 1e-9, 1.0, (max_v - min_v))
+        return (state_matrix - min_v) / span
+
+    # Default: z-score normalization per joint.
+    mean_v = np.mean(state_matrix, axis=0)
+    std_v = np.std(state_matrix, axis=0)
+    std_v = np.where(std_v < 1e-9, 1.0, std_v)
+    return (state_matrix - mean_v) / std_v
+
+
+def _lowpass_filter_matrix(state_matrix: np.ndarray, alpha: float = LOWPASS_ALPHA) -> np.ndarray:
+    """Simple per-joint IIR low-pass filter to suppress teleoperation jitter."""
+    if state_matrix.size == 0:
+        return state_matrix
+
+    a = float(np.clip(alpha, 0.01, 1.0))
+    filtered = np.empty_like(state_matrix)
+    filtered[0] = state_matrix[0]
+    for i in range(1, state_matrix.shape[0]):
+        filtered[i] = a * state_matrix[i] + (1.0 - a) * filtered[i - 1]
+    return filtered
+
+
+def _compute_joint_activity_matrix(
+    episode_df: pd.DataFrame,
+    window_size: int,
+) -> np.ndarray:
+    """
+    Build per-frame, per-joint activity from normalized + filtered dq with dynamic thresholding.
+
+    Returns matrix shaped (num_frames, num_joints).
+    """
+    state_matrix = np.vstack(episode_df["observation.state"].apply(np.asarray).values).astype(float)
+    normalized = _normalize_state_matrix(state_matrix, method=NORMALIZATION_METHOD)
+    filtered = _lowpass_filter_matrix(normalized, alpha=LOWPASS_ALPHA)
+
+    # dq per frame; first frame has no previous reference so it starts at zero.
+    dq = np.diff(filtered, axis=0, prepend=filtered[[0], :])
+    abs_dq = np.abs(dq)
+
+    # Dynamic per-joint threshold: median + k * MAD.
+    med = np.median(abs_dq, axis=0)
+    mad = np.median(np.abs(abs_dq - med), axis=0)
+    dynamic_threshold = med + (NOISE_MAD_SCALE * mad)
+    dynamic_threshold = np.maximum(dynamic_threshold, MIN_ACTIVE_JOINT_SCORE)
+
+    gated = np.where(abs_dq >= dynamic_threshold[None, :], abs_dq, 0.0)
+
+    # Short temporal smoothing on activity to avoid single-frame spikes.
+    smooth_window = max(3, min(int(window_size), int(ACTIVITY_SMOOTH_WINDOW)))
+    if smooth_window % 2 == 0:
+        smooth_window += 1
+
+    smoothed = np.empty_like(gated)
+    for j in range(gated.shape[1]):
+        series = pd.Series(gated[:, j])
+        smoothed[:, j] = (
+            series.rolling(
+                window=smooth_window,
+                center=True,
+                min_periods=max(1, smooth_window // 3),
+            )
+            .mean()
+            .bfill()
+            .ffill()
+            .to_numpy()
+        )
+
+    return smoothed
+
+
 def _compute_group_scores(
     episode_df: pd.DataFrame,
     group_indices: dict[str, list[int]],
     window_size: int,
 ) -> pd.DataFrame:
-    """Compute rolling STD score per group for one episode."""
-    state_matrix = np.vstack(episode_df["observation.state"].apply(np.asarray).values).astype(float)
+    """Compute per-group activity scores from normalized/filterd dq-based joint activity."""
+    joint_activity = _compute_joint_activity_matrix(episode_df, window_size=window_size)
     scores: dict[str, pd.Series] = {}
     for group_name, indices in group_indices.items():
-        group_matrix = state_matrix[:, indices]
-        joint_std_series = []
-        for col_idx in range(group_matrix.shape[1]):
-            series = pd.Series(group_matrix[:, col_idx], index=episode_df.index)
-            rolling_std = series.rolling(
-                window=window_size,
-                center=True,
-                min_periods=max(3, window_size // 3),
-            ).std()
-            rolling_std = rolling_std.fillna(method="bfill").fillna(method="ffill").fillna(0.0)
-            joint_std_series.append(rolling_std)
-
-        group_score = pd.concat(joint_std_series, axis=1).mean(axis=1)
-        scores[group_name] = group_score
+        group_score = np.mean(joint_activity[:, indices], axis=1)
+        scores[group_name] = pd.Series(group_score, index=episode_df.index)
     return pd.DataFrame(scores, index=episode_df.index)
 
 # ex) _compute_joint_scores(episode_df, window_size) -> df with columns for each joint containing rolling std values.
 def _compute_joint_scores(episode_df: pd.DataFrame, window_size: int) -> pd.DataFrame:
-    """Compute rolling STD score for each joint in DATASET_JOINT_ORDER."""
-    state_matrix = np.vstack(episode_df["observation.state"].apply(np.asarray).values).astype(float)
-    joint_scores: dict[str, pd.Series] = {}
-
-    for joint_idx, joint_name in enumerate(DATASET_JOINT_ORDER):
-        series = pd.Series(state_matrix[:, joint_idx], index=episode_df.index)
-        rolling_std = series.rolling(
-            window=window_size,
-            center=True,
-            min_periods=max(3, window_size // 3),
-        ).std()
-        rolling_std = rolling_std.bfill().ffill().fillna(0.0)
-        joint_scores[joint_name] = rolling_std
-
-    return pd.DataFrame(joint_scores, index=episode_df.index)
+    """Compute per-joint movement score from normalized/filterd dq-based activity."""
+    activity = _compute_joint_activity_matrix(episode_df, window_size=window_size)
+    return pd.DataFrame(activity, index=episode_df.index, columns=DATASET_JOINT_ORDER)
 
 #  _smooth_label_keys(label_keys, smooth_window) -> list of label keys after applying majority-vote smoothing in a sliding window.
 # ex) label_keys: ['left|manipulation', 'left|manipulation', 'right|manipulation', 'right|manipulation', 'right|manipulation', 'left|manipulation']
@@ -361,7 +443,7 @@ def annotate_episode(
     min_segment_len: int = MIN_SEGMENT_LENGTH,
 ) -> pd.DataFrame:
     """
-    Annotate one episode using rolling STD dominance.
+    Annotate one episode using normalized + filtered dq dominance.
 
     Returns a copy with column 'robot_move_annotation'.
     """
@@ -370,9 +452,22 @@ def annotate_episode(
         out_df["robot_move_annotation"] = []
         return out_df
 
-    _ = group_indices  # keep function signature modular for future model replacement
     joint_scores_df = _compute_joint_scores(episode_df, window_size=window_size)
-    dominant_joints = joint_scores_df.idxmax(axis=1).tolist()
+
+    # Frame-wise dominant joint from activity score; if all joints are inactive,
+    # hold the previous dominant joint for temporal stability.
+    score_values = joint_scores_df.to_numpy(dtype=float)
+    argmax_idx = np.argmax(score_values, axis=1)
+    max_vals = score_values[np.arange(score_values.shape[0]), argmax_idx]
+
+    dominant_joints: list[str] = []
+    fallback_joint = DATASET_JOINT_ORDER[0]
+    for i, max_val in enumerate(max_vals):
+        if max_val <= MIN_ACTIVE_JOINT_SCORE:
+            dominant_joint = dominant_joints[-1] if dominant_joints else fallback_joint
+        else:
+            dominant_joint = DATASET_JOINT_ORDER[int(argmax_idx[i])]
+        dominant_joints.append(dominant_joint)
 
     raw_label_keys = [
         "|".join(GROUP_TO_LABEL[JOINT_TO_GROUP[joint_name]])
@@ -438,109 +533,6 @@ def _find_annotation_segments(label_keys: list[str]) -> list[tuple[int, int, str
     return segments
 
 
-def _mode_smooth_states(states: list[str], window: int = 15) -> list[str]:
-    """Apply sliding-window mode smoothing to reduce state chattering."""
-    if not states:
-        return []
-
-    win = max(1, int(window))
-    half = win // 2
-    smoothed: list[str] = []
-
-    for idx in range(len(states)):
-        lo = max(0, idx - half)
-        hi = min(len(states), idx + half + 1)
-        window_states = states[lo:hi]
-        counts = Counter(window_states)
-        max_count = max(counts.values())
-        # Tie-break by earliest appearance in the local window for temporal stability.
-        for state in window_states:
-            if counts[state] == max_count:
-                smoothed.append(state)
-                break
-
-    return smoothed
-
-
-def segment_motion(
-    df: pd.DataFrame,
-    groups: dict[str, list[str]],
-    threshold: float = 0.05,
-    activity_window: int = MOTION_ACTIVITY_WINDOW,
-    mode_smooth_window: int = MOTION_MODE_SMOOTH_WINDOW,
-) -> pd.DataFrame:
-    """
-    Segment dominant motion group from joint-angle time series.
-
-    Pipeline:
-    1) Group activity = sum of rolling std(window=activity_window, min_periods=1) over group joints
-    2) Per-group max normalization to [0, 1]
-    3) Winner-takes-all group state by idxmax, replaced with 'rest' below threshold
-    4) Sliding mode smoothing with window=mode_smooth_window
-
-    Returns a copy of df with:
-    - '{group}_activity' columns
-    - '{group}_activity_norm' columns
-    - 'motion_state_raw'
-    - 'motion_state'
-    """
-    if df.empty:
-        out = df.copy()
-        out["motion_state_raw"] = pd.Series(dtype="object")
-        out["motion_state"] = pd.Series(dtype="object")
-        return out
-
-    if not groups:
-        raise ValueError("groups must not be empty.")
-
-    all_group_joints = {joint for joints in groups.values() for joint in joints}
-    missing_cols = sorted(all_group_joints - set(df.columns))
-    if missing_cols:
-        raise KeyError(f"Missing joint columns in df: {missing_cols}")
-
-    activity_df = pd.DataFrame(index=df.index)
-    for group_name, joint_cols in groups.items():
-        if not joint_cols:
-            raise ValueError(f"Group '{group_name}' has no joints.")
-
-        rolling_std_sum = (
-            df[joint_cols]
-            .rolling(window=activity_window, min_periods=1)
-            .std()
-            .fillna(0.0)
-            .sum(axis=1)
-        )
-        activity_df[f"{group_name}_activity"] = rolling_std_sum
-
-    norm_df = pd.DataFrame(index=df.index)
-    activity_cols: list[str] = []
-    for group_name in groups:
-        activity_col = f"{group_name}_activity"
-        norm_col = f"{group_name}_activity_norm"
-        activity_cols.append(activity_col)
-        max_val = float(activity_df[activity_col].max())
-        if max_val > 0.0:
-            norm_df[norm_col] = activity_df[activity_col] / max_val
-        else:
-            norm_df[norm_col] = 0.0
-
-    norm_activity_cols = [f"{group_name}_activity_norm" for group_name in groups]
-    winner_norm_cols = norm_df[norm_activity_cols]
-    state_raw = winner_norm_cols.idxmax(axis=1).str.replace("_activity_norm", "", regex=False)
-    winner_score = winner_norm_cols.max(axis=1)
-    state_raw = np.where(winner_score < float(threshold), "rest", state_raw)
-    state_raw_series = pd.Series(state_raw, index=df.index, dtype="object")
-
-    state_smooth = _mode_smooth_states(state_raw_series.tolist(), window=mode_smooth_window)
-    state_smooth_series = pd.Series(state_smooth, index=df.index, dtype="object")
-
-    out_df = df.copy()
-    out_df = pd.concat([out_df, activity_df, norm_df], axis=1)
-    out_df["motion_state_raw"] = state_raw_series
-    out_df["motion_state"] = state_smooth_series
-    return out_df
-
-
 def _build_csv_output_path(output_dir: Path) -> Path:
     """Build a unique CSV filename with date + daily run index + algorithm tag."""
     date_str = datetime.now().strftime("%Y%m%d")
@@ -573,29 +565,12 @@ def save_annotated_dataframe_csv(df_annotated: pd.DataFrame, output_dir: Path) -
     df_annotated.to_csv(output_path, index=False, encoding="utf-8")
     return output_path
 
-
-def _build_annotated_graph_output_path(output_dir: Path) -> Path:
-    """Build a unique image filename for annotated-episode preview."""
-    date_str = datetime.now().strftime("%Y%m%d")
-    candidates = list(output_dir.glob(f"{DATASET_TAG}_{date_str}_run*_annotated_episodes_preview.png"))
-
-    run_indices: list[int] = []
-    regex = re.compile(rf"^{re.escape(DATASET_TAG)}_{date_str}_run(\d+)_annotated_episodes_preview\.png$")
-    for path in candidates:
-        match = regex.match(path.name)
-        if match:
-            run_indices.append(int(match.group(1)))
-
-    next_run_idx = (max(run_indices) + 1) if run_indices else 1
-    return output_dir / f"{DATASET_TAG}_{date_str}_run{next_run_idx:02d}_annotated_episodes_preview.png"
-
 # visualize_annotated_episodes(df, max_episodes_to_plot) -> plot of joint values with annotation overlays for up to max episodes.
 # ex) visualize_annotated_episodes(df, max_episodes_to_plot=6) -> shows plots for the first 6 episodes with joint values and colored segments based on 'robot_move_annotation'.
 def visualize_annotated_episodes(
     df: pd.DataFrame,
-    output_dir: Path,
     max_episodes_to_plot: int = MAX_EPISODES_TO_PLOT,
-) -> Path:
+) -> None:
     """Plot joint values and annotation overlays for up to max episodes."""
     grouped_episodes = df.groupby("episode_index", sort=True)
     episode_ids = sorted(grouped_episodes.groups.keys())[:max_episodes_to_plot]
@@ -622,15 +597,6 @@ def visualize_annotated_episodes(
             for label in episode_data["robot_move_annotation"].tolist()
         ]
         segments = _find_annotation_segments(annotation_keys)
-
-        # Build compact episode-level summary so the annotated result is visible in the figure.
-        state_counts = Counter(episode_data["motion_state"].astype(str).tolist())
-        if state_counts:
-            annotated_episode = ", ".join(
-                [f"{k}:{v}" for k, v in state_counts.most_common(3)]
-            )
-        else:
-            annotated_episode = "no_state"
 
         # Plot original per-joint values (pre-aggregation) for all annotation joints.
         state_matrix = np.vstack(episode_data["observation.state"].apply(np.asarray).values).astype(float)
@@ -737,37 +703,23 @@ def visualize_annotated_episodes(
             bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "#cccccc"},
         )
 
-        # Visible annotation summary inside each subplot.
-        ax.text(
-            0.01,
-            0.98,
-            f"annotated_episode: {annotated_episode}",
-            transform=ax.transAxes,
-            fontsize=8,
-            va="top",
-            ha="left",
-            bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "#cccccc"},
-        )
-
         if row_idx == 0:
             ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), ncol=2, fontsize=7)
 
     plt.tight_layout()
 
-    # Always save preview so annotated-episode figure is available as a file.
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = _build_annotated_graph_output_path(output_dir)
-    fig.savefig(output_path, dpi=180, bbox_inches="tight")
-    print(f"[INFO] saved annotated episode preview: {output_path}")
-
-    # Show interactively when possible.
+    # If running in a non-interactive environment (e.g., script or headless server), save the figure instead of showing it.
+    # ex) linux server에서 실행할 때 plt.show() 대신 figures 폴더에 annotated_episodes_preview.png로 저장함. 
     backend_name = plt.get_backend().lower()
     if "agg" in backend_name:
+        output_dir = GRAPH_IMAGE_BASE_DIR / _dataset_output_dir_name(DATASET_NAME)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / "annotated_episodes_preview.png"
+        fig.savefig(output_path, dpi=180, bbox_inches="tight")
+        print(f"[INFO] non-interactive backend detected. saved figure: {output_path}")
         plt.close(fig)
     else:
         plt.show()
-
-    return output_path
 
 
 def save_joint_group_episode_previews(
@@ -829,13 +781,148 @@ def save_joint_group_episode_previews(
     return saved_paths
 
 
+def save_joint_group_episode_normalized_previews(
+    df: pd.DataFrame,
+    output_dir: Path,
+    max_episodes_to_plot: int = MAX_EPISODES_TO_PLOT,
+) -> list[Path]:
+    """Save per-group episode preview plots using normalized joint values."""
+    grouped_episodes = df.groupby("episode_index", sort=True)
+    episode_ids = sorted(grouped_episodes.groups.keys())[:max_episodes_to_plot]
+    if not episode_ids:
+        raise ValueError("No episodes found for normalized group preview visualization.")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    group_names = ["left_arm", "left_hand", "right_arm", "right_hand"]
+    saved_paths: list[Path] = []
+
+    for group_name in group_names:
+        joint_names = JOINT_GROUPS[group_name]
+        fig, axes = plt.subplots(
+            nrows=len(episode_ids),
+            ncols=1,
+            figsize=(14, 3.1 * len(episode_ids)),
+            squeeze=False,
+        )
+
+        for row_idx, episode_id in enumerate(episode_ids):
+            episode_data = grouped_episodes.get_group(episode_id)
+            x = (
+                episode_data["frame_index"].to_numpy()
+                if "frame_index" in episode_data.columns
+                else np.arange(len(episode_data), dtype=int)
+            )
+            state_matrix = np.vstack(episode_data["observation.state"].apply(np.asarray).values).astype(float)
+            normalized_matrix = _normalize_state_matrix(state_matrix, method=NORMALIZATION_METHOD)
+            ax = axes[row_idx, 0]
+
+            for joint_name in joint_names:
+                joint_idx = DATASET_JOINT_ORDER.index(joint_name)
+                ax.plot(
+                    x,
+                    normalized_matrix[:, joint_idx],
+                    linewidth=1.0,
+                    alpha=0.85,
+                    label=joint_name,
+                )
+
+            ax.set_title(
+                f"Episode {episode_id} {group_name} joint normalized values",
+                fontsize=10,
+                fontweight="bold",
+            )
+            ax.set_xlabel("Frame Index" if "frame_index" in episode_data.columns else "Timestep")
+            ax.set_ylabel("Normalized Joint Value")
+            ax.grid(True, linestyle="--", alpha=0.4)
+
+            if row_idx == 0:
+                ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), ncol=1, fontsize=7)
+
+        plt.tight_layout()
+        file_path = output_dir / f"{group_name}_normalized_episodes_preview.png"
+        fig.savefig(file_path, dpi=180, bbox_inches="tight")
+        plt.close(fig)
+        saved_paths.append(file_path)
+
+    return saved_paths
+
+
+def save_joint_group_episode_preprocessed_previews(
+    df: pd.DataFrame,
+    output_dir: Path,
+    max_episodes_to_plot: int = MAX_EPISODES_TO_PLOT,
+) -> list[Path]:
+    """Save per-group episode preview plots using preprocessed activity (|dq|) values."""
+    grouped_episodes = df.groupby("episode_index", sort=True)
+    episode_ids = sorted(grouped_episodes.groups.keys())[:max_episodes_to_plot]
+    if not episode_ids:
+        raise ValueError("No episodes found for preprocessed group preview visualization.")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    group_names = ["left_arm", "left_hand", "right_arm", "right_hand"]
+    saved_paths: list[Path] = []
+
+    for group_name in group_names:
+        joint_names = JOINT_GROUPS[group_name]
+        fig, axes = plt.subplots(
+            nrows=len(episode_ids),
+            ncols=1,
+            figsize=(14, 3.1 * len(episode_ids)),
+            squeeze=False,
+        )
+
+        for row_idx, episode_id in enumerate(episode_ids):
+            episode_data = grouped_episodes.get_group(episode_id)
+            x = (
+                episode_data["frame_index"].to_numpy()
+                if "frame_index" in episode_data.columns
+                else np.arange(len(episode_data), dtype=int)
+            )
+            preprocessed_matrix = _compute_joint_activity_matrix(
+                episode_data,
+                window_size=STD_WINDOW_SIZE,
+            )
+            ax = axes[row_idx, 0]
+
+            for joint_name in joint_names:
+                joint_idx = DATASET_JOINT_ORDER.index(joint_name)
+                ax.plot(
+                    x,
+                    preprocessed_matrix[:, joint_idx],
+                    linewidth=1.0,
+                    alpha=0.85,
+                    label=joint_name,
+                )
+
+            ax.set_title(
+                f"Episode {episode_id} {group_name} joint preprocessed activity values",
+                fontsize=10,
+                fontweight="bold",
+            )
+            ax.set_xlabel("Frame Index" if "frame_index" in episode_data.columns else "Timestep")
+            ax.set_ylabel("Preprocessed Activity (|dq|)")
+            ax.grid(True, linestyle="--", alpha=0.4)
+
+            if row_idx == 0:
+                ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), ncol=1, fontsize=7)
+
+        plt.tight_layout()
+        file_path = output_dir / f"{group_name}_preprocessed_episodes_preview.png"
+        fig.savefig(file_path, dpi=180, bbox_inches="tight")
+        plt.close(fig)
+        saved_paths.append(file_path)
+
+    return saved_paths
+
+
 
 
 
 def main() -> None:
+    args = parse_cli_args()
+
     # Load dataset
-    dataset_root = Path(BASIC_PATH) / FOLDER_NAME / DATASET_NAME
-    parquet_file_path = find_parquet_file(dataset_root)
+    parquet_file_path = resolve_parquet_input(args.input_parquet)
     print(f"[INFO] parquet file: {parquet_file_path}")
     
     # Read the parquet file into a DataFrame and check for required columns.
@@ -849,84 +936,48 @@ def main() -> None:
     if missing_columns:
         raise KeyError(f"Missing required columns: {missing_columns}")
 
-    # Build per-joint columns from observation.state so segment_motion can run on named joints.
-    state_matrix = np.vstack(df["observation.state"].apply(np.asarray).values).astype(float)
-    if state_matrix.shape[1] != len(DATASET_JOINT_ORDER):
-        raise ValueError(
-            "Mismatch between observation.state width and DATASET_JOINT_ORDER length: "
-            f"{state_matrix.shape[1]} vs {len(DATASET_JOINT_ORDER)}"
-        )
+    # ex) validate_annotation_groups() -> {"left_arm": [0,1,2,3,4,5,6], "right_arm": [7,8,9,10,11,12,13], "left_hand": [14,15,16,17,18,19], "right_hand": [20,21,22,23,24,25]}, body
+    group_indices = validate_annotation_groups()
 
-    joint_df = pd.DataFrame(state_matrix, columns=DATASET_JOINT_ORDER, index=df.index)
-    df_for_seg = pd.concat([df, joint_df], axis=1)
-
-    # Apply winner-takes-all segmentation episode-wise to avoid cross-episode leakage.
-    seg_groups = {
-        "left_arm": JOINT_GROUPS["left_arm"],
-        "right_arm": JOINT_GROUPS["right_arm"],
-        "left_hand": JOINT_GROUPS["left_hand"],
-        "right_hand": JOINT_GROUPS["right_hand"],
-    }
-    segmented_parts: list[pd.DataFrame] = []
-    for _, ep in df_for_seg.groupby("episode_index", sort=True):
-        segmented_parts.append(
-            segment_motion(
-                ep,
-                seg_groups,
-                threshold=MOTION_REST_THRESHOLD,
-                activity_window=MOTION_ACTIVITY_WINDOW,
-                mode_smooth_window=MOTION_MODE_SMOOTH_WINDOW,
-            )
-        )
-
-    if segmented_parts:
-        df_annotated = pd.concat(segmented_parts, axis=0).sort_index().reset_index(drop=True)
-    else:
-        df_annotated = df_for_seg.copy()
-        df_annotated["motion_state_raw"] = []
-        df_annotated["motion_state"] = []
-
-    # Keep compatibility with existing visualization/export columns.
-    state_to_label = {
-        "left_arm": ["left", "manipulation"],
-        "right_arm": ["right", "manipulation"],
-        "left_hand": ["left", "grasping"],
-        "right_hand": ["right", "grasping"],
-        "rest": ["rest"],
-    }
-    df_annotated["robot_move_annotation"] = df_annotated["motion_state"].apply(
-        lambda s: state_to_label.get(str(s), ["rest"])
+    # ex) annotate_dataframe_by_episode(df, group_indices, window_size=21, smooth_window=31, min_segment_len=20) 
+    # df_annotated의 열은 원본 df의 열 + 'robot_move_annotation' + 'dominant_joint_by_std' 이렇게 2개가 추가됨.
+    # 추가된 열1: 'robot_move_annotation' 열은 각 행마다 dominant joint가 속한 그룹의 라벨을 리스트 형태로 저장함. 예를 들어, ['left', 'manipulation'] 또는 ['right', 'grasping'] 같은 값이 들어갈 수 있음.
+    # 추가된 열2: 'dominant_joint_by_std' 열은 각 행마다 rolling std가 가장 높은 joint의 이름을 저장함. 예를 들어, 'kLeftShoulderPitch' 또는 'kRightHandIndex' 같은 joint 이름이 들어갈 수 있음.    
+    df_annotated = annotate_dataframe_by_episode(
+        df,
+        group_indices=group_indices,
+        window_size=STD_WINDOW_SIZE,
+        smooth_window=LABEL_SMOOTH_WINDOW,
+        min_segment_len=MIN_SEGMENT_LENGTH,
     )
 
-    # Keep CSV compact: save original dataset columns + final segmentation outputs only.
-    export_columns = list(df.columns) + ["robot_move_annotation", "motion_state"]
-    df_export = df_annotated[export_columns].copy()
-
     print()
-    print(f"[INFO] after annotation --> rows={len(df_export)}, cols={len(df_export.columns)}")
+    print(f"[INFO] after annotation --> rows={len(df_annotated)}, cols={len(df_annotated.columns)}")
     print()
-    print(
-        "[INFO] internal added columns(df_annotated): "
-        "motion_state_raw, motion_state, robot_move_annotation"
-    )
-    print("[INFO] exported added columns(df_export): motion_state, robot_move_annotation")
+    print(f"[INFO] added column_1 name: {df_annotated.columns[-2]}")
+    print(f"[INFO] added column_2 name: {df_annotated.columns[-1]}")
     print()
     print(
         "[INFO] robot_move_annotation sample(top 3): "
-        f"{df_export['robot_move_annotation'].head(3).tolist()}"
+        f"{df_annotated['robot_move_annotation'].head(3).tolist()}"
     )
-    print(f"[INFO] motion_state sample(top 3): {df_export['motion_state'].head(3).tolist()}" )
+    print(
+        "[INFO] dominant_joint_by_std sample(top 3): "
+        f"{df_annotated['dominant_joint_by_std'].head(3).tolist()}"
+    )
     print()
 
-    dataset_output_name = _dataset_output_dir_name(DATASET_NAME)
+    if args.input_parquet:
+        dataset_output_name = parquet_file_path.stem
+    else:
+        dataset_output_name = _dataset_output_dir_name(DATASET_NAME)
     csv_output_dir = ANNOTATED_CSV_BASE_DIR / dataset_output_name
     graph_output_dir = GRAPH_IMAGE_BASE_DIR / dataset_output_name
 
-    csv_output_path = save_annotated_dataframe_csv(df_export, csv_output_dir)
+    csv_output_path = save_annotated_dataframe_csv(df_annotated, csv_output_dir)
     print(f"[INFO] saved annotated dataframe csv: {csv_output_path}")
     print()
-    print(f"[INFO] saved csv --> rows={len(df_export)}, cols={len(df_export.columns)}")
-    print(f"[INFO] saved csv columns: {df_export.columns.tolist()}")
+    print(f"[INFO] saved csv --> rows={len(df_annotated)}, cols={len(df_annotated.columns)}")
 
     group_preview_paths = save_joint_group_episode_previews(
         df_annotated,
@@ -936,13 +987,24 @@ def main() -> None:
     for p in group_preview_paths:
         print(f"[INFO] saved group preview image: {p}")
 
-    print()
-    annotated_graph_path = visualize_annotated_episodes(
+    normalized_group_preview_paths = save_joint_group_episode_normalized_previews(
         df_annotated,
         output_dir=graph_output_dir,
         max_episodes_to_plot=MAX_EPISODES_TO_PLOT,
     )
-    print(f"[INFO] saved annotated graph image file: {annotated_graph_path}")
+    for p in normalized_group_preview_paths:
+        print(f"[INFO] saved normalized group preview image: {p}")
+
+    preprocessed_group_preview_paths = save_joint_group_episode_preprocessed_previews(
+        df_annotated,
+        output_dir=graph_output_dir,
+        max_episodes_to_plot=MAX_EPISODES_TO_PLOT,
+    )
+    for p in preprocessed_group_preview_paths:
+        print(f"[INFO] saved preprocessed group preview image: {p}")
+
+    print()
+    visualize_annotated_episodes(df_annotated, max_episodes_to_plot=MAX_EPISODES_TO_PLOT)
 
 
 if __name__ == "__main__":

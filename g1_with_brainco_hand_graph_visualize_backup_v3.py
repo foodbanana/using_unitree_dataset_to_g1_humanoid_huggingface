@@ -10,7 +10,7 @@ import pandas as pd
 
 
 # -----------------------------
-# 1) Hardcoded runtime settings
+# 1) Hardcoded runtime settings - mnt/hdd 에서 허깅페이스의 데이터셋을 다운로드 받았다고 가정한다
 # -----------------------------
 BASIC_PATH = "/mnt/hdd/huggingface/hub"
 FOLDER_NAME = "UnifoLM_G1_Brainco_Dataset"
